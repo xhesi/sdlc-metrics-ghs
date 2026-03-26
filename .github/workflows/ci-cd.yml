@@ -165,9 +165,8 @@ jobs:
           name: ${{ github.repository }}
           url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           version: ${{ steps.version.outputs.version }}
-          type: npm-package
+          type: Binary
           # Label to identify this as the primary build job for dashboard metrics
-          label: kind:build
 
       - name: Add Labels to Artifact
         uses: cloudbees-io-gha/label-artifact-version@v1
