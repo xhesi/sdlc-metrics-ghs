@@ -35,8 +35,7 @@ jobs:
         if: always()
         with:
           test-type: junit
-          test-results-location: junit.xml
-          folder-name: test-results
+          folder-name: .
 
   lint:
     needs: [test]
