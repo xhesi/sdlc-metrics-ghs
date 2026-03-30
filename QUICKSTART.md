@@ -1,6 +1,6 @@
 # Quick Start Guide
 
-Get CloudBees Unify metrics running in under 10 minutes.
+Get CloudBees Unify metrics running in under 10 minutes. 
 
 ## Prerequisites Checklist
 
