@@ -95,10 +95,28 @@ jobs:
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
 
+  gitleaks-scan:
+    name: Gitleaks Secret Scan
+    runs-on: ubuntu-latest
+    needs: [test]
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan with Gitleaks
+        uses: cloudbees-io-gha/gitleaks-scan-publish@v1
+        with:
+          cloudbees-pat: ${{ secrets.CloudBees-platform-PAT }}
 
   build-test:
     runs-on: ubuntu-latest
-    needs: [test, lint, codeql-scan]
+    needs: [test, lint, codeql-scan, gitleaks-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     permissions:
       id-token: write
