@@ -61,27 +61,7 @@ Before running workflows, create the following environments in CloudBees Unify:
 
 You can use the `cloudbees-environments.yml` file as a reference for environment configuration.
 
-#### Get API Credentials
-1. Log into your CloudBees Unify instance
-2. Navigate to **Settings** > **API Tokens**
-3. Create a new token with permissions:
-   - `artifact:write`
-   - `deployment:write`
-   - `test-results:write`
-   - `evidence:write`
-
 ### 2. GitHub Repository Configuration
-
-#### Configure Secrets
-Add the following secrets to your GitHub repository:
-- Go to **Settings** > **Secrets and variables** > **Actions**
-- Add the following repository secrets:
-
-```
-# Required CloudBees Unify secrets
-# Note: The CloudBees GHA actions handle authentication via OIDC
-# No explicit token configuration needed if OIDC is configured
-```
 
 #### Configure GitHub Environments
 1. Go to **Settings** > **Environments**
@@ -90,18 +70,7 @@ Add the following secrets to your GitHub repository:
    - `staging`: No protection rules (or add required reviewers if desired)
    - `production`: Add required reviewers and enable "Wait timer" if desired
 
-### 3. CloudBees OIDC Setup
-
-The CloudBees GitHub Actions use OIDC authentication. Configure the trust relationship:
-
-1. In CloudBees Unify, go to **Settings** > **Identity Providers**
-2. Add GitHub as an OIDC provider
-3. Configure the trust policy for your repository:
-   ```
-   repo:your-org/sdlc-metrics-gha:*
-   ```
-
-### 4. Initial Workflow Run
+### 3. Initial Workflow Run
 
 1. Push this code to your GitHub repository
 2. Create a `develop` branch: `git checkout -b develop && git push -u origin develop`
@@ -163,34 +132,6 @@ Access additional deployment insights:
 - **Software Delivery Activity**: Team velocity and throughput
 - **Code Progression**: Successful deployments tracking
 - **Average Deployment Time**: Performance metrics
-
-## Testing the Workflow
-
-### Trigger a Development Deployment
-```bash
-git checkout develop
-echo "// test change" >> src/index.js
-git add .
-git commit -m "Test deployment to dev"
-git push
-```
-
-### Trigger a Production Deployment
-```bash
-git checkout main
-git merge develop
-git push
-# Approve the production deployment in GitHub Actions
-```
-
-### Simulate a Failed Deployment
-To test change failure rate metrics, you can intentionally fail a deployment:
-
-1. Modify the workflow to add a failure step
-2. Push the change
-3. The failure will be tracked in CloudBees Unify
-4. Fix the issue and redeploy
-5. MTTR will be calculated based on the recovery time
 
 ## Repository Structure
 
@@ -302,33 +243,6 @@ Publishes build and deployment evidence.
       # Build Evidence Report
       ...
 ```
-
-## Troubleshooting
-
-### Workflow fails with authentication error
-- Verify OIDC trust relationship is configured in CloudBees Unify
-- Check that the repository is allowed in the trust policy
-- Ensure `id-token: write` permission is set in the workflow
-
-### Test results not appearing in Unify
-- Verify the test results file exists: `junit.xml`
-- Check that `publish-test-results` action ran successfully
-- Confirm component is configured in CloudBees Unify
-
-### Artifacts not registered
-- Check build job completed successfully
-- Verify artifact ID is being captured in outputs
-- Ensure `register-build-artifact` action has correct permissions
-
-### Deployments not tracked for DORA metrics
-- Confirm environments exist in CloudBees Unify
-- Verify `register-deployed-artifact` action is running
-- Check that artifact-id is being passed correctly from build job
-
-### CodeQL scan taking too long
-- This is normal for first run (builds cache)
-- Subsequent runs will be faster
-- Can run in parallel with other jobs
 
 ## Customization
 
