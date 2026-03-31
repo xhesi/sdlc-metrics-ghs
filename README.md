@@ -11,8 +11,8 @@ This demo application validates the CloudBees Unify metrics functionality, speci
 - **Artifact Traceability**: Version history with deployment details across environments
 - **Environment Inventory**: Track artifact versions promoted across dev, staging, and production
 - **Test Results Publishing**: Unit test results and coverage metrics
-- **Security Scanning**: CodeQL integration for security insights
-- **Build Evidence**: Comprehensive build and deployment evidence tracking
+- **Security Scanning**: CodeQL for code vulnerabilities + Gitleaks for secret detection
+- **Secret Management**: Automated test secrets workflow for validation
 
 ## Architecture
 
@@ -21,7 +21,7 @@ This demo application validates the CloudBees Unify metrics functionality, speci
 - **Framework**: Express.js
 - **Testing**: Jest with coverage reporting
 - **Linting**: ESLint
-- **Security**: GitHub CodeQL scanning
+- **Security**: GitHub CodeQL scanning + Gitleaks secret detection
 
 ### CI/CD Pipeline
 The workflow (`.github/workflows/ci-cd.yml`) includes:
@@ -29,8 +29,9 @@ The workflow (`.github/workflows/ci-cd.yml`) includes:
 1. **Test Job**: Runs unit tests and publishes results to CloudBees Unify
 2. **Lint Job**: Code quality checks with ESLint
 3. **CodeQL Scan**: GitHub-native security scanning (no self-hosted runner required)
-4. **Build Job**: Creates artifacts and registers them in CloudBees Unify
-5. **Deploy Jobs**: Deploys to dev/staging/production with artifact registration for DORA metrics
+4. **Gitleaks Scan**: Secret detection scanning to identify exposed credentials
+5. **Build-Test Job**: Creates artifacts and registers them in CloudBees Unify
+6. **Deploy Jobs**: Simulates deployments to dev/staging/production environments
 
 ### Environments
 - **Development**: Auto-deploys from `develop` branch
@@ -76,8 +77,10 @@ You can use the `cloudbees-environments.yml` file as a reference for environment
 2. Create a `develop` branch: `git checkout -b develop && git push -u origin develop`
 3. Make a commit to `develop` to trigger the workflow
 4. The workflow will:
-   - Run tests and publish results
-   - Perform CodeQL scan
+   - Run tests and publish results to CloudBees Unify
+   - Perform linting checks
+   - Run CodeQL security scan
+   - Run Gitleaks secret detection scan
    - Build and register the artifact
    - Deploy to development environment
 
@@ -139,7 +142,11 @@ Access additional deployment insights:
 .
 ├── .github/
 │   └── workflows/
-│       └── ci-cd.yml              # Main CI/CD pipeline
+│       ├── ci-cd.yml              # Main CI/CD pipeline
+│       └── manage-test-secrets.yml # Automated test secrets management
+├── .cloudbees/
+│   └── workflows/
+│       └── ci-cd.yaml             # CloudBees native workflow (equivalent)
 ├── src/
 │   ├── index.js                   # Express application
 │   └── utils.js                   # Utility functions
@@ -150,6 +157,8 @@ Access additional deployment insights:
 ├── package.json                  # Node.js dependencies and scripts
 ├── .eslintrc.js                  # ESLint configuration
 ├── .env.example                  # Environment variables template
+├── BUILD-DURATION-TRACKING.md   # Build metrics documentation
+├── CLOUDBEES-NATIVE-WORKFLOW.md # Native workflow documentation
 └── README.md                     # This file
 ```
 
@@ -171,7 +180,13 @@ Access additional deployment insights:
 - No self-hosted runner required
 - Results visible in GitHub Security tab
 
-### Build Job
+### Gitleaks Scan Job
+- Secret detection scanning using Gitleaks
+- Identifies exposed credentials in code and history
+- Scans entire git history with `fetch-depth: 0`
+- Publishes findings to CloudBees Unify
+
+### Build-Test Job
 - Generates semantic version from git history
 - Creates production build
 - Packages artifact as tar.gz
@@ -180,11 +195,10 @@ Access additional deployment insights:
 - Publishes build evidence
 
 ### Deploy Jobs
-- Downloads build artifact
-- Simulates deployment (customize for real deployments)
-- Registers deployed artifact using `cloudbees-io-gha/register-deployed-artifact`
-- **This is the key action for DORA metrics!**
-- Publishes deployment evidence
+- Simulates deployment to respective environments (customize for real deployments)
+- **Note**: Deployment registration is currently disabled (action not yet released)
+- Includes smoke tests for staging environment
+- Production requires manual approval via GitHub Environments
 
 ## Key CloudBees Actions Used
 
@@ -210,18 +224,13 @@ Registers build artifacts for traceability.
     type: npm-package
 ```
 
-### `cloudbees-io-gha/register-deployed-artifact`
-Registers deployments for DORA metrics tracking.
+### `cloudbees-io-gha/gitleaks-scan-publish@v1`
+Scans repository for exposed secrets and credentials.
 
 ```yaml
-- uses: cloudbees-io-gha/register-deployed-artifact
-  with:
-    artifact-id: ${{ needs.build.outputs.artifact_id }}
-    target-environment: production
-    labels: automated-deployment
+- uses: cloudbees-io-gha/gitleaks-scan-publish@v1
+  # Optional: with cloudbees-pat for publishing to Unify
 ```
-
-**Note**: Use without version tag. The `target-environment` parameter should match environments configured in CloudBees Unify.
 
 ### `cloudbees-io-gha/label-artifact-version@v1`
 Adds labels to artifacts for filtering and organization.
@@ -243,6 +252,27 @@ Publishes build and deployment evidence.
       # Build Evidence Report
       ...
 ```
+
+**Note**: `register-deployed-artifact` action is currently disabled in the workflow as it's not yet released. Deployment tracking will be enabled when the action becomes available.
+
+## Additional Workflows
+
+### Manage Test Secrets Workflow
+The repository includes a utility workflow (`manage-test-secrets.yml`) for testing secret detection:
+
+**Purpose**: Creates or deletes a test file (`env.test`) containing fake credentials for Gitleaks validation
+
+**Usage**:
+1. Go to **Actions** tab in GitHub
+2. Select **"Manage Test Secrets File"** workflow
+3. Click **"Run workflow"**
+4. Choose action: **create** or **delete**
+
+**Features**:
+- Fake credentials are base64 encoded in the workflow to avoid detection
+- Decodes and writes plaintext secrets to `env.test` file for Gitleaks to detect
+- Automatically commits and pushes changes
+- Useful for validating secret scanning integration
 
 ## Customization
 
