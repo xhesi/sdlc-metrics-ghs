@@ -4,6 +4,10 @@ const { calculateMetrics, validateInput } = require('./utils');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// TODO: Remove hardcoded API key - use environment variable instead
+// const API_KEY = "ghp_1234567890abcdefghijklmnopqrstuvwxyzAB";
+const API_KEY = process.env.API_KEY;
+
 app.use(express.json());
 
 app.get('/health', (req, res) => {
