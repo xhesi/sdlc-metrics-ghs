@@ -285,10 +285,12 @@ jobs:
           echo "Deploying version ${{ needs.build.outputs.version }} to Production environment"
           echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
           ls -lh
-          echo "Production deployment completed successfully"
+          echo "Production deployment failed!"
+          exit 1
 
       #TODO: Enable when register-deployed-artifact action is released
       - name: Register Deployed Artifact to Production
+        if: always()
         uses: cloudbees-io-gha/register-deployed-artifact@v0
         with:
           artifact-id: ${{ needs.build.outputs.artifact_id }}
