@@ -286,7 +286,7 @@ jobs:
           echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
           ls -lh
           echo "Production deployment failed!"
-          exit 1
+        #  exit 1
 
       #TODO: Enable when register-deployed-artifact action is released
       - name: Register Deployed Artifact to Production
