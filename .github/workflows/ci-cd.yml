@@ -6,6 +6,15 @@ on:
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
+    inputs:
+      prod_deployment_status:
+        description: 'Production deployment outcome'
+        required: true
+        default: 'success'
+        type: choice
+        options:
+          - success
+          - failure
 
 env:
   NODE_VERSION: '18'
@@ -285,8 +294,13 @@ jobs:
           echo "Deploying version ${{ needs.build.outputs.version }} to Production environment"
           echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
           ls -lh
-          echo "Production deployment failed!"
-        #  exit 1
+
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.prod_deployment_status }}" == "failure" ]]; then
+            echo "Production deployment failed!"
+            exit 1
+          else
+            echo "Production deployment completed successfully"
+          fi
 
       #TODO: Enable when register-deployed-artifact action is released
       - name: Register Deployed Artifact to Production
