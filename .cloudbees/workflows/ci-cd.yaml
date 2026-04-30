@@ -92,8 +92,10 @@ jobs:
           cd ..
           ls -lh ${{ env.APP_NAME }}-${VERSION}.tar.gz
 
-      # Artifact registration is handled automatically by 'kind: build' annotation
-      # Evidence can be added via other mechanisms if needed
+      - name: Publish artifact
+        uses: cloudbees-io/publish-artifact@v1
+        with:
+          path: ${{ env.APP_NAME }}-${{ steps.version.outputs.version }}.tar.gz
 
   deploy-dev:
     needs: [build]
@@ -102,6 +104,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
+
+      - name: Download artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz
 
       - name: Deploy to Development
         kind: deploy
@@ -113,9 +120,6 @@ jobs:
           ls -lh
           echo "Deployment completed successfully"
 
-      # Deployment registration - artifact tracking via version and environment
-      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
-
   deploy-staging:
     needs: [build]
     if: cloudbees.scm.branch == 'main'
@@ -124,6 +128,10 @@ jobs:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
 
+      - name: Download artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz
 
       - name: Deploy to Staging
         kind: deploy
@@ -142,9 +150,6 @@ jobs:
           echo "Running smoke tests on staging environment..."
           echo "All smoke tests passed"
 
-      # Deployment registration - artifact tracking via version and environment
-      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
-
   deploy-production:
     needs: [build, deploy-staging]
     if: cloudbees.scm.branch == 'main'
@@ -152,6 +157,11 @@ jobs:
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
+
+      - name: Download artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz
 
       - name: Deploy to Production
         kind: deploy
@@ -169,6 +179,3 @@ jobs:
         run: |
           echo "Running post-deployment validation..."
           echo "Validation completed successfully"
-
-      # Deployment registration - artifact tracking via version and environment
-      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
